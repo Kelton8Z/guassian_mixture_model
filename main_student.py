@@ -2,10 +2,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+'''
+    Initialize θ with some values (random or otherwise).
+     The parameters θ = {ωk,μk,σk2}Kk=1 includes the weights ωk, means μk and variance σk2. 
+     For unit test purpose, given μ = 2,σ = 2, generate a normal distribution with 3000 sample points, i.e. np.random.normal(mu, sigma, 3000) 
+    and implement a function get_mu_sigma(X) to estimate parameters μ and σ2 for your 3000 sample points.
+'''
+
 def get_mu_core(X, r, n_cluster, n_dim):
-    #############
-    # Your Code #
-    #############
+    mu = np.zeros(n_cluster)
+    for j in range(n_cluster):
+        mu[j] = sum(r[i][j]*X[i] for i in range(n_dim)) / sum(r[i][j] for i in range(n_dim))
+    return mu
 
 def get_sigma_core(X, r, n_cluster, n_dim):
     #############
