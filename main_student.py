@@ -15,20 +15,17 @@ def get_mu_core(X, r, n_cluster, n_dim):
         mu[j] = sum(r[i][j]*X[i] for i in range(n_dim)) / sum(r[i][j] for i in range(n_dim))
     return mu
 
-def get_sigma_core(X, r, n_cluster, n_dim):
-    #############
-    # Your Code #
-    #############
+def get_sigma_core(X, r, n_cluster, n_dim, mu):
+    sigma = np.zeros(n_cluster)
+    for j in range(n_cluster):
+        sigma[j] = sum((mu[j]-X[i])**2 for i in range(n_dim)) / n_dim
+    return sigma
 
 def get_w_core(r, n_cluster, n_dim):
-    #############
-    # Your Code #
-    #############
+    pass
 
 def get_normal_pdf_core(x, mu_scalar, sigma_scalar):
-    #############
-    # Your Code #
-    #############
+    pass
 
 def get_initial_r(X, n_cluster):
     n_sample = len(lines)
