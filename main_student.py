@@ -22,10 +22,15 @@ def get_sigma_core(X, r, n_cluster, n_dim, mu):
     return sigma
 
 def get_w_core(r, n_cluster, n_dim):
-    pass
+    n_sample = r.shape[0]
+    w = np.zeros(r.shape)
+    for k in range(n_cluster):
+        w[k] = np.sum(r[i][k] for i in range(n_sample)) / np.sum(np.sum(r[i][kk] for i in range(n_sample)) for kk in range(n_cluster))
+    return w
 
 def get_normal_pdf_core(x, mu_scalar, sigma_scalar):
-    pass
+    # normal distribution of x given mu and sigma
+    return np.random.normal(mu_scalar, sigma_scalar)
 
 def get_initial_r(X, n_cluster):
     n_sample = len(lines)
@@ -46,18 +51,18 @@ def get_mu(X, r):
     n_cluster = r.shape[1]
     return get_mu_core(X, r, n_cluster, n_dim)
 
-def get_sigma(X, r):
+def get_sigma(X, r,mu):
     assert len(X.shape) == 2 and len(r.shape) == 2
     assert X.shape[0] == r.shape[0]
     n_dim = X.shape[1]
     n_sample, n_cluster = r.shape
-    return get_sigma_core(X, r, n_cluster, n_dim)
+    return get_sigma_core(X, r, n_cluster, n_dim,mu)
 
 def get_mu_sigma(X, r):
     assert len(X.shape) == 2 and len(r.shape) == 2
     assert X.shape[0] == r.shape[0]
     mu = get_mu(X,r)
-    sigma = get_sigma(X,r)
+    sigma = get_sigma(X,r,mu)
     return mu, sigma
 
 def get_w(r):
@@ -100,7 +105,7 @@ for k in range(100):
     prob_normal = np.zeros((n_sample,n_cluster))
     for i in range(n_sample):
         for j in range(n_cluster):
-            prob_normal[i,j] = w[j] * get_normal_pdf(X0[i,:], mu[j,:], sigma[j,:]) #numerator / deno
+            prob_normal[i,j] = w[j] * get_normal_pdf(X0[i,:], mu[j,:], sigma[j,:])
     r = prob_normal / prob_normal.sum(1).reshape(-1,1)
 
     print("mu = ", mu.tolist())
