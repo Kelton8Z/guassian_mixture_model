@@ -29,8 +29,8 @@ def get_w_core(r, n_cluster, n_dim):
     return w
 
 def get_normal_pdf_core(x, mu_scalar, sigma_scalar):
-    # normal distribution of x given mu and sigma
-    return np.random.normal(mu_scalar, sigma_scalar)
+    # normal distribution value of x given mu and sigma   ``
+    return 1 / (sigma_scalar*(2*np.pi)**0.5)*np.exp(-0.5*((x-mu_scalar)/sigma_scalar)**2)
 
 def get_initial_r(X, n_cluster):
     n_sample = len(lines)
@@ -76,6 +76,11 @@ def get_normal_pdf(x, mu, sigma):
     assert sigma.size == 1
     return get_normal_pdf_core(x, mu, sigma)
 
+# def lower_bound(r, )
+
+def cov_matrix(k, r, mu, X, n_cluster, n_samples):
+    return 1 / sum(r[i][k] for i in range(n_sample)) * np.sum(r[n][k]*np.matmul(X-mu[k], (X-mu[k]).T))
+
 with open('data.txt') as f:
     lines = f.readlines()
 
@@ -85,7 +90,7 @@ X = np.array([[float(x) for x in l[:-2].split(' ')][:5] for l in lines])
 assert len(X.shape) == 2
 
 # Unit-test
-mu_given, sigma_given = 5, 2
+mu_given, sigma_given = 2, 2
 X_sample = np.random.normal(mu_given, sigma_given, n_sample).reshape(n_sample, -1)
 r = np.ones((n_sample, 1))
 mu, sigma = get_mu_sigma(X_sample, r)
@@ -100,12 +105,14 @@ for k in range(100):
     # M-step
     mu, sigma = get_mu_sigma(X0, r)
     w = get_w(r)
-
+    print(w[0])
+    print(mu[0,:])
+    print(sigma[0,:])
     # E-step
     prob_normal = np.zeros((n_sample,n_cluster))
     for i in range(n_sample):
         for j in range(n_cluster):
-            prob_normal[i,j] = w[j] * get_normal_pdf(X0[i,:], mu[j,:], sigma[j,:])
+            prob_normal[i][j] = w[j] * get_normal_pdf(X0[i,:], mu[j,:], sigma[j,:])
     r = prob_normal / prob_normal.sum(1).reshape(-1,1)
 
     print("mu = ", mu.tolist())
@@ -125,3 +132,10 @@ for k in range(100):
 
     print("mu = ", mu.tolist())
     print("sigma = ", sigma.tolist())
+
+# comparing with sklearn 
+# from sklearn.mixture import GaussianMixtur
+
+# gm = GaussianMixture(n_components=2, random_state=0).fit(X)
+# gm.means_
+# gm.predict([[0, 0], [12, 3]])
