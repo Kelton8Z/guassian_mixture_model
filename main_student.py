@@ -71,10 +71,22 @@ def get_w(r):
     return get_w_core(r, n_cluster, n_dim)
 
 def get_normal_pdf(x, mu, sigma):
-    assert x.size == 1
-    assert mu.size == 1
-    assert sigma.size == 1
+    # assert x.size == 1
+    # assert mu.size == 1
+    # assert sigma.size == 1
+    assert len(x.shape) == 1
+    assert len(mu.shape) == 1
+    assert len(sigma.shape) == 1
     return get_normal_pdf_core(x, mu, sigma)
+
+def plot_mu_all(mu_all):
+    assert len(mu_all.shape) == 2
+    _, n_cluster = mu_all.shape
+    for i in range(n_cluster):
+        plt.plot(mu_all[:,i], label="Cluster #%d" % i)
+    plt.title("Cluster mean")
+    plt.legend()
+    plt.show()
 
 # def lower_bound(r, )
 
@@ -96,23 +108,25 @@ r = np.ones((n_sample, 1))
 mu, sigma = get_mu_sigma(X_sample, r)
 print(mu, sigma)
 
+# After your first M-E-step iteration, the rnk for the
+# first two data should be r1k = [3e − 37, 7e − 6, 0.99], r2k = [0.16, 0.83, 0.013]
+
 # Univariate
 X0 = X[:,:1]
-print(X0.shape)
 r = get_initial_r(X, n_cluster)
 for k in range(100):
 
     # M-step
     mu, sigma = get_mu_sigma(X0, r)
+    mu = mu.reshape(-1,1)
     w = get_w(r)
-    print(w[0])
-    print(mu[0,:])
-    print(sigma[0,:])
+    print(w.shape)
+    sigma = sigma.reshape(-1,1)
     # E-step
     prob_normal = np.zeros((n_sample,n_cluster))
     for i in range(n_sample):
         for j in range(n_cluster):
-            prob_normal[i][j] = w[j] * get_normal_pdf(X0[i,:], mu[j,:], sigma[j,:])
+            prob_normal[i,j] = w[j] * get_normal_pdf(X0[i,:], mu[j,:], sigma[j,:])
     r = prob_normal / prob_normal.sum(1).reshape(-1,1)
 
     print("mu = ", mu.tolist())
