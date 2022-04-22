@@ -11,17 +11,17 @@ import pandas as pd
 
 def get_mu_core(X, r, n_cluster, n_dim):
     mu = np.zeros((n_cluster, n_dim))
-    for j in range(n_cluster):
-        for i in range(n_dim):
-            mu[j][i] = sum(r[k][j]*X[k][i] for k in range(3000)) / 3000 #sum(r[k][j] for k in range(3000))
-            assert(len(mu[j][i].shape)==0)
+    for k in range(n_cluster):
+        for j in range(n_dim):
+            mu[k][j] = sum(r[i][k]*X[i][j] for i in range(3000)) / 3000 #sum(r[k][j] for k in range(3000))
+            assert(len(mu[k][j].shape)==0)
     return mu
 
 def get_sigma_core(X, r, n_cluster, n_dim, mu):
     sigma = np.zeros((n_cluster, n_dim))
-    for j in range(n_cluster):
-        for i in range(n_dim):
-            sigma[j][i] = sum((mu[j][i]-X[k][i])**2 for k in range(3000)) / 3000
+    for k in range(n_cluster):
+        for j in range(n_dim):
+            sigma[k][j] = sum((mu[k][j]-X[i][j])**2 for i in range(3000)) / 3000
     return sigma
 
 def get_w_core(r, n_cluster, n_dim):
