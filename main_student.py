@@ -13,14 +13,15 @@ def get_mu_core(X, r, n_cluster, n_dim):
     mu = np.zeros((n_cluster, n_dim))
     for j in range(n_cluster):
         for i in range(n_dim):
-            mu[j][i] = sum([r[k][j]*X[k][i] for k in range(3000)]) / 3000 #sum(r[k][j] for k in range(3000))
+            mu[j][i] = sum(r[k][j]*X[k][i] for k in range(3000)) / 3000 #sum(r[k][j] for k in range(3000))
+            assert(len(mu[j][i].shape)==0)
     return mu
 
 def get_sigma_core(X, r, n_cluster, n_dim, mu):
     sigma = np.zeros((n_cluster, n_dim))
     for j in range(n_cluster):
         for i in range(n_dim):
-            sigma[j][i] = sum([(mu[j][i]-X[k][i])**2 for k in range(3000)]) / 3000
+            sigma[j][i] = sum((mu[j][i]-X[k][i])**2 for k in range(3000)) / 3000
     return sigma
 
 def get_w_core(r, n_cluster, n_dim):
@@ -82,7 +83,10 @@ def get_normal_pdf(x, mu, sigma):
     return get_normal_pdf_core(x, mu, sigma)
 
 def plot_mu_all(mu_all):
-    assert len(mu_all.shape) == 2
+    # print(mu_all.shape)
+    # print(len(mu_all.shape))
+    mu_all = np.squeeze(mu_all, axis=2)
+    assert mu_all.shape == (100, 3)
     _, n_cluster = mu_all.shape
     for i in range(n_cluster):
         plt.plot(mu_all[:,i], label="Cluster #%d" % i)
@@ -113,6 +117,8 @@ print(mu, sigma)
 # After your first M-E-step iteration, the rnk for the
 # first two data should be r1k = [3e − 37, 7e − 6, 0.99], r2k = [0.16, 0.83, 0.013]
 
+mu_all = []
+
 # Univariate
 X0 = X[:,:1]
 r = get_initial_r(X, n_cluster)
@@ -130,9 +136,15 @@ for k in range(100):
         for j in range(n_cluster):
             prob_normal[i,j] = w[j] * get_normal_pdf(X0[i,:], mu[j,:], sigma[j,:])
     r = prob_normal / prob_normal.sum(1).reshape(-1,1)
-
+    # if k == 0:
+    #     print(r)
+    #     break
+        # assert(r[2][])
     print("mu = ", mu.tolist())
     print("sigma = ", sigma.tolist())
+    mu_all.append(mu)
+
+plot_mu_all(np.array(mu_all))
 
 # Multivariate
 r = get_initial_r(X, n_cluster)
