@@ -10,25 +10,24 @@ import pandas as pd
 '''
 
 def get_mu_core(X, r, n_cluster, n_dim):
-    print(X.shape)
     mu = np.zeros((n_cluster, n_dim))
     for j in range(n_cluster):
         for i in range(n_dim):
-            mu[j][i] = sum(r[k][j]*X[k][i] for k in range(3000)) / 3000 #sum(r[k][j] for k in range(3000))
+            mu[j][i] = sum([r[k][j]*X[k][i] for k in range(3000)]) / 3000 #sum(r[k][j] for k in range(3000))
     return mu
 
 def get_sigma_core(X, r, n_cluster, n_dim, mu):
     sigma = np.zeros((n_cluster, n_dim))
     for j in range(n_cluster):
         for i in range(n_dim):
-            sigma[j][i] = sum((mu[j][i]-X[k][i])**2 for k in range(3000)) / 3000
+            sigma[j][i] = sum([(mu[j][i]-X[k][i])**2 for k in range(3000)]) / 3000
     return sigma
 
 def get_w_core(r, n_cluster, n_dim):
     n_sample = r.shape[0]
-    w = np.zeros(r.shape)
+    w = np.zeros(n_cluster)
     for k in range(n_cluster):
-        w[k] = np.sum(r[i][k] for i in range(n_sample)) / np.sum(np.sum(r[i][kk] for i in range(n_sample)) for kk in range(n_cluster))
+        w[k] = sum(r[i][k] for i in range(n_sample)) / sum(sum(r[i][kk] for i in range(n_sample)) for kk in range(n_cluster))
     return w
 
 def get_normal_pdf_core(x, mu_scalar, sigma_scalar):
@@ -59,7 +58,7 @@ def get_sigma(X, r,mu):
     assert X.shape[0] == r.shape[0]
     n_dim = X.shape[1]
     n_sample, n_cluster = r.shape
-    return get_sigma_core(X, r, n_cluster, n_dim,mu)
+    return get_sigma_core(X, r, n_cluster, n_dim, mu)
 
 def get_mu_sigma(X, r):
     assert len(X.shape) == 2 and len(r.shape) == 2
@@ -123,13 +122,13 @@ for k in range(100):
     mu, sigma = get_mu_sigma(X0, r)
     # mu = mu.reshape(-1,1)
     w = get_w(r)
-   
+    # w shape is (3,)
     sigma = sigma.reshape(-1,1)
     # E-step
     prob_normal = np.zeros((n_sample,n_cluster))
     for i in range(n_sample):
         for j in range(n_cluster):
-            prob_normal[i,j] = w[i] * get_normal_pdf(X0[i,:], mu[j,:], sigma[j,:])
+            prob_normal[i,j] = w[j] * get_normal_pdf(X0[i,:], mu[j,:], sigma[j,:])
     r = prob_normal / prob_normal.sum(1).reshape(-1,1)
 
     print("mu = ", mu.tolist())
@@ -140,10 +139,10 @@ r = get_initial_r(X, n_cluster)
 for k in range(100):
     mu, sigma = get_mu_sigma(X, r)
     w = get_w(r)
-
     prob_normal = np.zeros((n_sample,n_cluster))
     for i in range(n_sample):
         for j in range(n_cluster):
+            print(get_normal_pdf(X[i,:], mu[j,:], sigma[j,:]).shape)
             prob_normal[i,j] = w[j] * get_normal_pdf(X[i,:], mu[j,:], sigma[j,:]) #numerator / deno
     r = prob_normal / prob_normal.sum(1).reshape(-1,1)
 
