@@ -13,20 +13,14 @@ def get_mu_core(X, r, n_cluster, n_dim):
     mu = np.zeros((n_cluster, n_dim))
     for k in range(n_cluster):
         cluster_cnt = 0
-        # mu[k,:] = np.matmul(r[:,k], X) / r[:,k].sum()
         for j in range(n_dim):
             for i in range(3000):
                 if r[i][k]:
                     cluster_cnt += 1
                     mu[k][j] += r[i][k]*X[i][j]
-            # mu[k][j] = sum(r[i][k]*X[i][j] ) / cluster_cnt 
             mu[k][j] /= cluster_cnt 
             assert(len(mu[k][j].shape)==0)
-    # mu = []
-    # for k in range(n_cluster):
-    #     r_c = r[:, k]
-    #     total = np.sum(r_c)
-    #     mu.append((X*r_c).sum(axis=0)/total)
+
     return np.array(mu)
 
 def get_sigma_core(X, r, n_cluster, n_dim):
@@ -40,24 +34,9 @@ def get_sigma_core(X, r, n_cluster, n_dim):
                     cluster_sum += r[i][k]
                     sigma[k][j] += r[i][k]*(X[i][j]-mu[k][j])**2
             sigma[k][j] /= cluster_sum
-            # sigma[k][j] = sum((X[i][j]-mu[k][j])**2 for i in range(3000)) / 3000
-        print(cluster_sum)
-    return np.sqrt(sigma)
-    # print(f'sigma 1: {sigma}')
-   
-    # sigma = []
-    # for k in range(n_cluster):
-    #     r_c = r[:, k]
-    #     diff = 0
-    #     for i in range(r.shape[0]):
-    #         assert(r[i][k] in [0,1])
-    #         if r[i][k]:
-    #             diff += r[i][k]*(X[i] - mu[k]).T*(X[i] - mu[k])
 
-    #     total = np.sum(r_c)
-    #     sigma.append(np.sqrt(diff/total))
-    # print(f'sigma 2: {sigma}')
-    # return np.array(sigma)
+    return np.sqrt(sigma)
+
 
 def get_w_core(r, n_cluster, n_dim):
     n_sample = r.shape[0]
@@ -175,7 +154,7 @@ for k in range(100):
         print(r[0])
         print(r[1])
         break
-        # assert(r[2][])
+
     print("mu = ", mu.tolist())
     print("sigma = ", sigma.tolist())
     mu_all.append(mu)
