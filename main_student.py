@@ -12,17 +12,52 @@ import pandas as pd
 def get_mu_core(X, r, n_cluster, n_dim):
     mu = np.zeros((n_cluster, n_dim))
     for k in range(n_cluster):
+        cluster_cnt = 0
+        # mu[k,:] = np.matmul(r[:,k], X) / r[:,k].sum()
         for j in range(n_dim):
-            mu[k][j] = sum(r[i][k]*X[i][j] for i in range(3000)) / 3000 #sum(r[k][j] for k in range(3000))
+            for i in range(3000):
+                if r[i][k]:
+                    cluster_cnt += 1
+                    mu[k][j] += r[i][k]*X[i][j]
+            # mu[k][j] = sum(r[i][k]*X[i][j] ) / cluster_cnt 
+            mu[k][j] /= cluster_cnt 
             assert(len(mu[k][j].shape)==0)
-    return mu
+    # mu = []
+    # for k in range(n_cluster):
+    #     r_c = r[:, k]
+    #     total = np.sum(r_c)
+    #     mu.append((X*r_c).sum(axis=0)/total)
+    return np.array(mu)
 
-def get_sigma_core(X, r, n_cluster, n_dim, mu):
+def get_sigma_core(X, r, n_cluster, n_dim):
+    mu = get_mu(X, r)
     sigma = np.zeros((n_cluster, n_dim))
     for k in range(n_cluster):
+        cluster_sum = 0
         for j in range(n_dim):
-            sigma[k][j] = sum((mu[k][j]-X[i][j])**2 for i in range(3000)) / 3000
-    return sigma
+            for i in range(r.shape[0]):
+                if r[i][k]:
+                    cluster_sum += r[i][k]
+                    sigma[k][j] += r[i][k]*(X[i][j]-mu[k][j])**2
+            sigma[k][j] /= cluster_sum
+            # sigma[k][j] = sum((X[i][j]-mu[k][j])**2 for i in range(3000)) / 3000
+        print(cluster_sum)
+    return np.sqrt(sigma)
+    # print(f'sigma 1: {sigma}')
+   
+    # sigma = []
+    # for k in range(n_cluster):
+    #     r_c = r[:, k]
+    #     diff = 0
+    #     for i in range(r.shape[0]):
+    #         assert(r[i][k] in [0,1])
+    #         if r[i][k]:
+    #             diff += r[i][k]*(X[i] - mu[k]).T*(X[i] - mu[k])
+
+    #     total = np.sum(r_c)
+    #     sigma.append(np.sqrt(diff/total))
+    # print(f'sigma 2: {sigma}')
+    # return np.array(sigma)
 
 def get_w_core(r, n_cluster, n_dim):
     n_sample = r.shape[0]
@@ -32,8 +67,11 @@ def get_w_core(r, n_cluster, n_dim):
     return w
 
 def get_normal_pdf_core(x, mu_scalar, sigma_scalar):
-    # normal distribution value of x given mu and sigma   ``
-    return 1 / (sigma_scalar*(2*np.pi)**0.5)*np.exp(-0.5*((x-mu_scalar)/sigma_scalar)**2)
+    # normal distribution value of x given mu and sigma   `
+    first_term = 1 / (sigma_scalar*(2*np.pi)**0.5)
+    second_term = np.exp(-0.5*np.square((x-mu_scalar)/sigma_scalar))
+    return first_term*second_term
+   
 
 def get_initial_r(X, n_cluster):
     n_sample = len(lines)
@@ -54,18 +92,18 @@ def get_mu(X, r):
     n_cluster = r.shape[1]
     return get_mu_core(X, r, n_cluster, n_dim)
 
-def get_sigma(X, r,mu):
+def get_sigma(X, r):
     assert len(X.shape) == 2 and len(r.shape) == 2
     assert X.shape[0] == r.shape[0]
     n_dim = X.shape[1]
     n_sample, n_cluster = r.shape
-    return get_sigma_core(X, r, n_cluster, n_dim, mu)
+    return get_sigma_core(X, r, n_cluster, n_dim)
 
 def get_mu_sigma(X, r):
     assert len(X.shape) == 2 and len(r.shape) == 2
     assert X.shape[0] == r.shape[0]
     mu = get_mu(X,r)
-    sigma = get_sigma(X,r,mu)
+    sigma = get_sigma(X,r)
     return mu, sigma
 
 def get_w(r):
@@ -74,17 +112,12 @@ def get_w(r):
     return get_w_core(r, n_cluster, n_dim)
 
 def get_normal_pdf(x, mu, sigma):
-    # assert x.size == 1
-    # assert mu.size == 1
-    # assert sigma.size == 1
     assert len(x.shape) == 1
     assert len(mu.shape) == 1
     assert len(sigma.shape) == 1
     return get_normal_pdf_core(x, mu, sigma)
 
 def plot_mu_all(mu_all):
-    # print(mu_all.shape)
-    # print(len(mu_all.shape))
     mu_all = np.squeeze(mu_all, axis=2)
     assert mu_all.shape == (100, 3)
     _, n_cluster = mu_all.shape
@@ -96,8 +129,8 @@ def plot_mu_all(mu_all):
 
 # def lower_bound(r, )
 
-def cov_matrix(k, r, mu, X, n_cluster, n_samples):
-    return 1 / sum(r[i][k] for i in range(n_sample)) * np.sum(r[n][k]*np.matmul(X-mu[k], (X-mu[k]).T))
+# def cov_matrix(k, r, mu, X, n_cluster, n_samples):
+#     return 1 / sum(r[i][k] for i in range(n_sample)) * np.sum(r[n][k]*np.matmul(X-mu[k], (X-mu[k]).T))
 
 with open('data.txt') as f:
     lines = f.readlines()
@@ -112,6 +145,7 @@ mu_given, sigma_given = 2, 2
 X_sample = np.random.normal(mu_given, sigma_given, n_sample).reshape(n_sample, -1)
 r = np.ones((n_sample, 1))
 mu, sigma = get_mu_sigma(X_sample, r)
+print('mu, sigma')
 print(mu, sigma)
 
 # After your first M-E-step iteration, the rnk for the
@@ -126,27 +160,30 @@ for k in range(100):
 
     # M-step
     mu, sigma = get_mu_sigma(X0, r)
-    # mu = mu.reshape(-1,1)
+
     w = get_w(r)
     # w shape is (3,)
-    sigma = sigma.reshape(-1,1)
+
     # E-step
     prob_normal = np.zeros((n_sample,n_cluster))
     for i in range(n_sample):
         for j in range(n_cluster):
-            prob_normal[i,j] = w[j] * get_normal_pdf(X0[i,:], mu[j,:], sigma[j,:])
+            prob_normal[i,j] = w[j] * get_normal_pdf(X0[i,:], mu[j,:], sigma[j,:])[0]
+
     r = prob_normal / prob_normal.sum(1).reshape(-1,1)
-    # if k == 0:
-    #     print(r)
-    #     break
+    if k == 0:
+        print(r[0])
+        print(r[1])
+        break
         # assert(r[2][])
     print("mu = ", mu.tolist())
     print("sigma = ", sigma.tolist())
     mu_all.append(mu)
 
-plot_mu_all(np.array(mu_all))
+# plot_mu_all(np.array(mu_all))
 
 # Multivariate
+'''
 r = get_initial_r(X, n_cluster)
 for k in range(100):
     mu, sigma = get_mu_sigma(X, r)
@@ -159,7 +196,7 @@ for k in range(100):
     r = prob_normal / prob_normal.sum(1).reshape(-1,1)
 
     print("mu = ", mu.tolist())
-    print("sigma = ", sigma.tolist())
+    print("sigma = ", sigma.tolist())'''
 
 # comparing with sklearn 
 # from sklearn.mixture import GaussianMixtur
